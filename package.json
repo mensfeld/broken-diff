@@ -1,0 +1,8 @@
+{
+  "name": "app",
+  "private": true,
+  "dependencies": {
+    "diff2html-cli": "^5.1.2"
+  }
+}
+
