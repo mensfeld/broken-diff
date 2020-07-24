@@ -2,13 +2,26 @@
 
 [Sidekiq Changes](https://github.com/mperham/sidekiq/blob/master/Changes.md) | [Sidekiq Pro Changes](https://github.com/mperham/sidekiq/blob/master/Pro-Changes.md) | [Sidekiq Enterprise Changes](https://github.com/mperham/sidekiq/blob/master/Ent-Changes.md)
 
-Please see [http://sidekiq.org](http://sidekiq.org) for more details and how to buy.
+Please see [sidekiq.org](https://sidekiq.org/) for more details and how to buy.
 
-HEAD
+5.1.1
 ---------
 
-- Update `constantize` for batch callbacks. [#4469]
+- Fix broken basic fetcher [#4616]
 
+5.1.0
+---------
+
+- Remove old Statsd metrics with `WorkerName` in the name [#4377]
+```
+job.WorkerName.count -> job.count with tag worker:WorkerName
+job.WorkerName.perform -> job.perform with tag worker:WorkerName
+job.WorkerName.failure -> job.failure with tag worker:WorkerName
+```
+- Remove `concurrent-ruby` gem dependency [#4586]
+- Update `constantize` for batch callbacks. [#4469]
+- Add queue tag to `jobs.recovered.fetch` metric [#4594]
+- Refactor Pro's fetch infrastructure [#4602]
 
 5.0.1
 ---------

@@ -33,8 +33,9 @@ module Sidekiq
     # Code within this method is not tested because it alters
     # global process state irreversibly.  PRs which improve the
     # test coverage of Sidekiq::CLI are welcomed.
-    def run
-      boot_system
+    def run(boot_app: true)
+      boot_application if boot_app
+
       if environment == "development" && $stdout.tty? && Sidekiq.log_formatter.is_a?(Sidekiq::Logger::Formatters::Pretty)
         print_banner
       end
@@ -54,7 +55,7 @@ module Sidekiq
 
       logger.info "Running in #{RUBY_DESCRIPTION}"
       logger.info Sidekiq::LICENSE
-      logger.info "Upgrade to Sidekiq Pro for more features and support: http://sidekiq.org" unless defined?(::Sidekiq::Pro)
+      logger.info "Upgrade to Sidekiq Pro for more features and support: https://sidekiq.org" unless defined?(::Sidekiq::Pro)
 
       # touch the connection pool so it is created before we
       # fire startup and start multithreading.
@@ -228,8 +229,7 @@ module Sidekiq
       opts = parse_config(opts[:config_file]).merge(opts) if opts[:config_file]
 
       # set defaults
-      opts[:queues] = ["default"] if opts[:queues].nil? || opts[:queues].empty?
-      opts[:strict] = true if opts[:strict].nil?
+      opts[:queues] = ["default"] if opts[:queues].nil?
       opts[:concurrency] = Integer(ENV["RAILS_MAX_THREADS"]) if opts[:concurrency].nil? && ENV["RAILS_MAX_THREADS"]
 
       # merge with defaults
@@ -240,7 +240,7 @@ module Sidekiq
       Sidekiq.options
     end
 
-    def boot_system
+    def boot_application
       ENV["RACK_ENV"] = ENV["RAILS_ENV"] = environment
 
       if File.directory?(options[:require])
@@ -368,6 +368,8 @@ module Sidekiq
       end
 
       opts = opts.merge(opts.delete(environment.to_sym) || {})
+      opts.delete(:strict)
+
       parse_queues(opts, opts.delete(:queues) || [])
 
       opts
@@ -379,6 +381,7 @@ module Sidekiq
 
     def parse_queue(opts, queue, weight = nil)
       opts[:queues] ||= []
+      opts[:strict] = true if opts[:strict].nil?
       raise ArgumentError, "queues: #{queue} cannot be defined twice" if opts[:queues].include?(queue)
       [weight.to_i, 1].max.times { opts[:queues] << queue }
       opts[:strict] = false if weight.to_i > 0

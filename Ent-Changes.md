@@ -2,7 +2,26 @@
 
 [Sidekiq Changes](https://github.com/mperham/sidekiq/blob/master/Changes.md) | [Sidekiq Pro Changes](https://github.com/mperham/sidekiq/blob/master/Pro-Changes.md) | [Sidekiq Enterprise Changes](https://github.com/mperham/sidekiq/blob/master/Ent-Changes.md)
 
-Please see [http://sidekiq.org/](http://sidekiq.org/) for more details and how to buy.
+Please see [sidekiq.org](https://sidekiq.org) for more details and how to buy.
+
+2.1.1
+-------------
+
+- Add optional **app preload** in swarm, saves even more memory [#4646]
+- Fix incorrect queue tags in historical metrics [#4377]
+
+2.1.0
+-------------
+
+- Move historical metrics to use tags rather than interpolating name [#4377]
+```
+sidekiq.enqueued.#{name} -> sidekiq.queue.size with tag queue:#{name}
+sidekiq.latency.#{name} -> sidekiq.queue.latency with tag queue:#{name}
+```
+- Remove `concurrent-ruby` gem dependency [#4586]
+- Add systemd `Type=notify` support for swarm [#4511]
+- Length swarm's boot timeout to 60 sec [#4544]
+- Add NL locale
 
 2.0.1
 -------------

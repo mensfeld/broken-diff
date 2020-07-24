@@ -22,6 +22,7 @@ module Sidekiq
     attr_accessor :manager, :poller, :fetcher
 
     def initialize(options)
+      options[:fetch] ||= BasicFetch.new(options)
       @manager = Sidekiq::Manager.new(options)
       @poller = Sidekiq::Scheduled::Poller.new
       @done = false
@@ -56,7 +57,7 @@ module Sidekiq
 
       # Requeue everything in case there was a worker who grabbed work while stopped
       # This call is a no-op in Sidekiq but necessary for Sidekiq Pro.
-      strategy = (@options[:fetch] || Sidekiq::BasicFetch)
+      strategy = @options[:fetch]
       strategy.bulk_requeue([], @options)
 
       clear_heartbeat
@@ -97,19 +98,27 @@ module Sidekiq
     end
 
     def self.flush_stats
-      nowdate = Time.now.utc.strftime("%Y-%m-%d")
       fails = Processor::FAILURE.reset
       procd = Processor::PROCESSED.reset
-      Sidekiq.redis do |conn|
-        conn.pipelined do
-          conn.incrby("stat:processed", procd)
-          conn.incrby("stat:processed:#{nowdate}", procd)
-          conn.expire("stat:processed:#{nowdate}", STATS_TTL)
+      return if fails + procd == 0
 
-          conn.incrby("stat:failed", fails)
-          conn.incrby("stat:failed:#{nowdate}", fails)
-          conn.expire("stat:failed:#{nowdate}", STATS_TTL)
+      nowdate = Time.now.utc.strftime("%Y-%m-%d")
+      begin
+        Sidekiq.redis do |conn|
+          conn.pipelined do
+            conn.incrby("stat:processed", procd)
+            conn.incrby("stat:processed:#{nowdate}", procd)
+            conn.expire("stat:processed:#{nowdate}", STATS_TTL)
+
+            conn.incrby("stat:failed", fails)
+            conn.incrby("stat:failed:#{nowdate}", fails)
+            conn.expire("stat:failed:#{nowdate}", STATS_TTL)
+          end
         end
+      rescue => ex
+        # we're exiting the process, things might be shut down so don't
+        # try to handle the exception
+        Sidekiq.logger.warn("Unable to flush stats: #{ex}")
       end
     end
     at_exit(&method(:flush_stats))
@@ -149,7 +158,7 @@ module Sidekiq
         _, exists, _, _, msg = Sidekiq.redis { |conn|
           conn.multi {
             conn.sadd("processes", key)
-            conn.exists(key)
+            conn.exists?(key)
             conn.hmset(key, "info", to_json, "busy", curstate.size, "beat", Time.now.to_f, "quiet", @done)
             conn.expire(key, 60)
             conn.rpop("#{key}-signals")
@@ -164,7 +173,7 @@ module Sidekiq
         ::Process.kill(msg, ::Process.pid)
       rescue => e
         # ignore all redis/network issues
-        logger.error("heartbeat: #{e.message}")
+        logger.error("heartbeat: #{e}")
         # don't lose the counts if there was a network issue
         Processor::PROCESSED.incr(procd)
         Processor::FAILURE.incr(fails)

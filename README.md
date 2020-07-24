@@ -2,11 +2,8 @@ Sidekiq
 ==============
 
 [![Gem Version](https://badge.fury.io/rb/sidekiq.svg)](https://rubygems.org/gems/sidekiq)
-[![Code Climate](https://codeclimate.com/github/mperham/sidekiq.svg)](https://codeclimate.com/github/mperham/sidekiq)
-[![Test Coverage](https://codeclimate.com/github/mperham/sidekiq/badges/coverage.svg)](https://codeclimate.com/github/mperham/sidekiq/coverage)
+[![Codecov](https://codecov.io/gh/mperham/sidekiq/branch/master/graph/badge.svg)](https://codecov.io/gh/mperham/sidekiq)
 [![Build Status](https://circleci.com/gh/mperham/sidekiq/tree/master.svg?style=svg)](https://circleci.com/gh/mperham/sidekiq/tree/master)
-[![Gitter Chat](https://badges.gitter.im/mperham/sidekiq.svg)](https://gitter.im/mperham/sidekiq)
-
 
 Simple, efficient background processing for Ruby.
 
@@ -94,4 +91,4 @@ Please see [LICENSE](https://github.com/mperham/sidekiq/blob/master/LICENSE) for
 Author
 -----------------
 
-Mike Perham, [@mperham@mastodon.xyz](https://mastodon.xyz/@mperham) / [@sidekiq](https://twitter.com/sidekiq), [https://www.mikeperham.com](https://www.mikeperham.com) / [https://www.contribsys.com](https://www.contribsys.com)
+Mike Perham, [@getajobmike](https://twitter.com/getajobmike) / [@sidekiq](https://twitter.com/sidekiq), [https://www.mikeperham.com](https://www.mikeperham.com) / [https://www.contribsys.com](https://www.contribsys.com)

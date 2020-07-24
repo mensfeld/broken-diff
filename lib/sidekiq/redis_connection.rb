@@ -8,15 +8,14 @@ module Sidekiq
   class RedisConnection
     class << self
       def create(options = {})
-        options.keys.each do |key|
-          options[key.to_sym] = options.delete(key)
+        symbolized_options = options.transform_keys(&:to_sym)
+
+        if !symbolized_options[:url] && (u = determine_redis_provider)
+          symbolized_options[:url] = u
         end
 
-        options[:id] = "Sidekiq-#{Sidekiq.server? ? "server" : "client"}-PID-#{::Process.pid}" unless options.key?(:id)
-        options[:url] ||= determine_redis_provider
-
-        size = if options[:size]
-          options[:size]
+        size = if symbolized_options[:size]
+          symbolized_options[:size]
         elsif Sidekiq.server?
           # Give ourselves plenty of connections.  pool is lazy
           # so we won't create them until we need them.
@@ -29,11 +28,11 @@ module Sidekiq
 
         verify_sizing(size, Sidekiq.options[:concurrency]) if Sidekiq.server?
 
-        pool_timeout = options[:pool_timeout] || 1
-        log_info(options)
+        pool_timeout = symbolized_options[:pool_timeout] || 1
+        log_info(symbolized_options)
 
         ConnectionPool.new(timeout: pool_timeout, size: size) do
-          build_client(options)
+          build_client(symbolized_options)
         end
       end
 
@@ -93,9 +92,15 @@ module Sidekiq
       end
 
       def log_info(options)
-        # Don't log Redis AUTH password
         redacted = "REDACTED"
-        scrubbed_options = options.dup
+
+        # deep clone so we can muck with these options all we want
+        #
+        # exclude SSL params from dump-and-load because some information isn't
+        # safely dumpable in current Rubies
+        keys = options.keys
+        keys.delete(:ssl_params)
+        scrubbed_options = Marshal.load(Marshal.dump(options.slice(*keys)))
         if scrubbed_options[:url] && (uri = URI.parse(scrubbed_options[:url])) && uri.password
           uri.password = redacted
           scrubbed_options[:url] = uri.to_s
@@ -122,7 +127,7 @@ module Sidekiq
         # initialization code at all.
         #
         p = ENV["REDIS_PROVIDER"]
-        if p && p =~ /\:/
+        if p && p =~ /:/
           raise <<~EOM
             REDIS_PROVIDER should be set to the name of the variable which contains the Redis URL, not a URL itself.
             Platforms like Heroku will sell addons that publish a *_URL variable.  You need to tell Sidekiq with REDIS_PROVIDER, e.g.:

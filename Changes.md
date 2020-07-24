@@ -2,6 +2,33 @@
 
 [Sidekiq Changes](https://github.com/mperham/sidekiq/blob/master/Changes.md) | [Sidekiq Pro Changes](https://github.com/mperham/sidekiq/blob/master/Pro-Changes.md) | [Sidekiq Enterprise Changes](https://github.com/mperham/sidekiq/blob/master/Ent-Changes.md)
 
+HEAD
+---------
+
+- Jobs are now sorted by age in the Busy Workers table. [#4641]
+- Fix "check all" JS logic in Web UI [#4619]
+
+6.1.0
+---------
+
+- Web UI - Dark Mode fixes [#4543, natematykiewicz]
+- Ensure `Rack::ContentLength` is loaded as middleware for correct Web UI responses [#4541]
+- Avoid exception dumping SSL store in Redis connection logging [#4532]
+- Better error messages in Sidekiq::Client [#4549]
+- Remove rack-protection, reimplement CSRF protection [#4588]
+- Require redis-rb 4.2 [#4591]
+- Update to jquery 1.12.4 [#4593]
+- Refactor internal fetch logic and API [#4602]
+
+6.0.7
+---------
+
+- Refactor systemd integration to work better with custom binaries [#4511]
+- Don't connect to Redis at process exit if not needed [#4502]
+- Remove Redis connection naming [#4479]
+- Fix Redis Sentinel password redaction [#4499]
+- Add Vietnamese locale (vi) [#4528]
+
 6.0.6
 ---------
 
@@ -150,6 +177,12 @@ See the [Logging wiki page](https://github.com/mperham/sidekiq/wiki/Logging) for
   more resources.
 - Integrate the StandardRB code formatter to ensure consistent code
   styling. [#4114, gearnode]
+
+5.2.9
+---------
+
+- Release Rack lock due to a cascade of CVEs. [#4566]
+  Pro-tip: don't lock Rack.
 
 5.2.8
 ---------

@@ -11,10 +11,10 @@ gem "activerecord-jdbcsqlite3-adapter", platforms: :jruby
 group :test do
   gem "minitest"
   gem "simplecov"
+  gem "codecov", require: false
 end
 
 group :development, :test do
-  gem "pry-byebug", platforms: :mri
   gem "standard"
 end
 

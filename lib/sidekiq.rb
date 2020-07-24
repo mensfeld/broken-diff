@@ -20,6 +20,7 @@ module Sidekiq
     labels: [],
     concurrency: 10,
     require: ".",
+    strict: true,
     environment: nil,
     timeout: 25,
     poll_interval_average: nil,
@@ -95,10 +96,11 @@ module Sidekiq
       retryable = true
       begin
         yield conn
-      rescue Redis::CommandError => ex
+      rescue Redis::BaseError => ex
         # 2550 Failover can cause the server to become a replica, need
         # to disconnect and reopen the socket to get back to the primary.
-        if retryable && ex.message =~ /READONLY/
+        # 4495 Use the same logic if we have a "Not enough replicas" error from the primary
+        if retryable && ex.message =~ /READONLY|NOREPLICAS/
           conn.disconnect!
           retryable = false
           retry

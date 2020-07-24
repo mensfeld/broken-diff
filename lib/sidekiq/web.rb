@@ -10,8 +10,9 @@ require "sidekiq/web/helpers"
 require "sidekiq/web/router"
 require "sidekiq/web/action"
 require "sidekiq/web/application"
+require "sidekiq/web/csrf_protection"
 
-require "rack/protection"
+require "rack/content_length"
 
 require "rack/builder"
 require "rack/file"
@@ -154,14 +155,14 @@ module Sidekiq
     def build_sessions
       middlewares = self.middlewares
 
-      unless using?(::Rack::Protection) || ENV["RACK_ENV"] == "test"
-        middlewares.unshift [[::Rack::Protection, {use: :authenticity_token}], nil]
+      s = sessions
+
+      # turn on CSRF protection if sessions are enabled and this is not the test env
+      if s && !using?(CsrfProtection) && ENV["RACK_ENV"] != "test"
+        middlewares.unshift [[CsrfProtection], nil]
       end
 
-      s = sessions
-      return unless s
-
-      unless using? ::Rack::Session::Cookie
+      if s && !using?(::Rack::Session::Cookie)
         unless (secret = Web.session_secret)
           require "securerandom"
           secret = SecureRandom.hex(64)
@@ -171,6 +172,13 @@ module Sidekiq
         options = options.merge(s.to_hash) if s.respond_to? :to_hash
 
         middlewares.unshift [[::Rack::Session::Cookie, options], nil]
+      end
+
+      # Since Sidekiq::WebApplication no longer calculates its own
+      # Content-Length response header, we must ensure that the Rack middleware
+      # that does this is loaded
+      unless using? ::Rack::ContentLength
+        middlewares.unshift [[::Rack::ContentLength], nil]
       end
     end
 
